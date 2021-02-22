@@ -48,17 +48,17 @@ def end_quiz(chat_id, r_db, quiz_questions):
         r_db.delete(chat_id)
         return {'status': True, 'data': text}
     else:
-        text = f'Вы еще не начали викторину'
+        text = TEXTS['quiz_not_started']
         return {'status': False, 'data': text}
 
 
 def get_my_score(chat_id, r_db):
     current_question_id = r_db.get(chat_id)
     if current_question_id:
-        text = f'Вы в викторине, рейтинг сделаем позже'
+        text = TEXTS['rating_exists']
         return {'status': True, 'data': text}
     else:
-        text = f'Вы еще не начали викторину'
+        text = TEXTS['quiz_not_started']
         return {'status': False, 'data': text}
 
 
@@ -85,7 +85,7 @@ def waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions):
             answer_to_user = f"{TEXTS['false_answer']} {TEXTS['try_again']}"
         return {'status': True, 'true_answer': case_is_true, 'data': answer_to_user, 'answer': true_answer}
     else:
-        text = f'Вы еще не начали викторину'
+        text = TEXTS['quiz_not_started']
         return {'status': False, 'data': text}
 
 

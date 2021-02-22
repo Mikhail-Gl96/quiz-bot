@@ -27,18 +27,16 @@ def main():
     new_question_handler = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['new_question']), new_question)
     end_quiz_handler = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['end_quiz']), end_quiz)
     my_score_handler = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['my_score']), get_my_score)
-    user_last_question_handler = MessageHandler(Filters.text, get_user_last_question)
     waiting_for_answer_handler = MessageHandler(Filters.text, waiting_for_question_answer)
     waiting_for_new_question_handler = MessageHandler(Filters.text, waiting_for_new_question)
 
-    conversation_handler = ConversationHandler(entry_points=[start_handler, new_question_handler],
+    conversation_handler = ConversationHandler(entry_points=[new_question_handler],
                                                states={
-                                                   'user_id': [user_last_question_handler],
                                                    'waiting_for_answer': [waiting_for_answer_handler],
                                                    'waiting_for_new_question': [waiting_for_new_question_handler]
                                                },
                                                fallbacks=[])
-
+    dispatcher.add_handler(start_handler)
     dispatcher.add_handler(end_quiz_handler)
     dispatcher.add_handler(my_score_handler)
     dispatcher.add_handler(conversation_handler)
@@ -51,7 +49,6 @@ def start(update, context):
     chat_id = update.effective_chat.id
     send_start_keyboard(update, context)
     telegram_logger.debug(f'/start command activated by {chat_id}')
-    return 'chat_id'
 
 
 def send_start_keyboard(update, context):
@@ -97,19 +94,6 @@ def get_my_score(update, context):
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
         telegram_logger.debug(f'get_my_score for {chat_id} failed: no chat_id in redis')
-
-
-def get_user_last_question(update, context):
-    chat_id = update.effective_chat.id
-    user_message = update.message.text
-    text = utilities.waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions)
-    if text['status']:
-        context.bot.send_message(chat_id=chat_id, text=text['data'])
-        telegram_logger.debug(f'reply question for {chat_id}: question[{text["question_id"]}] - {text["current_question"]} ')
-        return 'waiting_for_answer'
-    else:
-        telegram_logger.debug(f'no question_id for {chat_id}')
-        return 'start'
 
 
 def waiting_for_question_answer(update, context):
