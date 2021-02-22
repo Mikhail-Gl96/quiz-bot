@@ -1,19 +1,17 @@
-import os
 import logging
-import random
+import os
 
 import redis
-import telegram
 from dotenv import load_dotenv
-from telegram.ext import Updater
 from telegram.ext import CommandHandler, ConversationHandler, RegexHandler
 from telegram.ext import MessageHandler, Filters
+from telegram.ext import Updater
 
-from MyLogger import TelegramLogsHandler, create_my_logger
 import questions
+import utilities
+from MyLogger import TelegramLogsHandler, create_my_logger
 from texts import TEXTS_BUTTONS as TEXTS_BUTTONS
 from texts import TEXTS as TEXTS
-import utilities
 
 
 telegram_logger = create_my_logger(name=__name__, level=logging.INFO)
@@ -64,13 +62,8 @@ def send_start_keyboard(update, context):
 
 
 def new_question(update, context):
-
     chat_id = update.effective_chat.id
     random_question = utilities.new_question(chat_id=chat_id, r_db=r_db, quiz_questions=quiz_questions)
-    # all_questions = list(quiz_questions.keys())
-    # random_question_number = random.choice(all_questions)
-    # random_question = quiz_questions[random_question_number]['question']
-    # r_db.set(chat_id, random_question_number)
     context.bot.send_message(chat_id=chat_id, text=random_question)
     telegram_logger.debug(f'new_question for {chat_id}: question - {random_question} ')
     return 'waiting_for_answer'
@@ -78,48 +71,41 @@ def new_question(update, context):
 
 def end_quiz(update, context):
     chat_id = update.effective_chat.id
-    current_question_id = r_db.get(chat_id)
-    if current_question_id:
-        current_question = quiz_questions[current_question_id]['question']
-        current_question_true_answer = quiz_questions[current_question_id]['answer']
-        text = f'Текущий вопрос: {current_question}\n\nОтвет: {current_question_true_answer}'
-        context.bot.send_message(chat_id=chat_id, text=text)
+    text = utilities.end_quiz(chat_id, r_db, quiz_questions)
+    # TODO: так как поле затирается и сразу создается новое - если пользователь правильно ответит на вопрос и
+    #  нажмет на сдаться - у него появится сообщение как будто он сдался. При доработке бота сделать джейсонку умнее*
+    if text['status']:
+        context.bot.send_message(chat_id=chat_id, text=text['data'])
         telegram_logger.debug(f'end_quiz for {chat_id}')
-        r_db.delete(chat_id)
         telegram_logger.debug(f'delete chat_id_key in redis for {chat_id}')
         return new_question(update, context)
     else:
-        text = f'Вы еще не начали викторину'
         context.bot.send_message(chat_id=chat_id,
-                                 text=text,
+                                 text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
         telegram_logger.debug(f'end_quiz for {chat_id} failed: no chat_id in redis')
 
 
 def get_my_score(update, context):
     chat_id = update.effective_chat.id
-    current_question_id = r_db.get(chat_id)
-    if current_question_id:
-        text = f'Вы в викторине, рейтинг сделаем позже'
-        context.bot.send_message(chat_id=chat_id, text=text)
+    text = utilities.get_my_score(chat_id, r_db)
+    if text['status']:
+        context.bot.send_message(chat_id=chat_id, text=text['data'])
         telegram_logger.debug(f'end_quiz for {chat_id} failed: no chat_id in redis')
     else:
-        text = f'Вы еще не начали викторину'
         context.bot.send_message(chat_id=chat_id,
-                                 text=text,
+                                 text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
         telegram_logger.debug(f'get_my_score for {chat_id} failed: no chat_id in redis')
 
 
 def get_user_last_question(update, context):
     chat_id = update.effective_chat.id
-    current_question_id = r_db.get(chat_id)
-    if current_question_id:
-        question_id_number = current_question_id.lower().replace("вопрос ", "")
-        current_question = quiz_questions[current_question_id]['question']
-        text = f'Ваш последний вопрос без ответа: {question_id_number}. Вопрос был такой: {current_question}'
-        context.bot.send_message(chat_id=chat_id, text=text)
-        telegram_logger.debug(f'reply question for {chat_id}: question[{current_question_id}] - {current_question} ')
+    user_message = update.message.text
+    text = utilities.waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions)
+    if text['status']:
+        context.bot.send_message(chat_id=chat_id, text=text['data'])
+        telegram_logger.debug(f'reply question for {chat_id}: question[{text["question_id"]}] - {text["current_question"]} ')
         return 'waiting_for_answer'
     else:
         telegram_logger.debug(f'no question_id for {chat_id}')
@@ -127,74 +113,30 @@ def get_user_last_question(update, context):
 
 
 def waiting_for_question_answer(update, context):
-    print('waiting_for_question_answer')
     chat_id = update.effective_chat.id
-    current_question_id = r_db.get(chat_id)
-    if current_question_id:
-        true_answer = quiz_questions[current_question_id]['answer'].lower()
-        user_text = update.message.text.lower()
-        case_is_true = true_answer == user_text or true_answer.find(user_text) != -1
-        if case_is_true:
-            answer_to_user = f"{TEXTS['true_answer']} {TEXTS['next_question']}"
-        else:
-            answer_to_user = f"{TEXTS['false_answer']} {TEXTS['try_again']}"
+    user_message = update.message.text
+    text = utilities.waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions)
+    if text['status']:
         context.bot.send_message(chat_id=chat_id,
-                                 text=answer_to_user,
+                                 text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'waiting_for_question_answer for {chat_id}: answer is correct')
-        return 'waiting_for_new_question' if case_is_true else 'waiting_for_answer'
+        telegram_logger.debug(f'waiting_for_question_answer for {chat_id}: answer is {text["true_answer"]}')
+        return 'waiting_for_new_question' if text['true_answer'] else 'waiting_for_answer'
     else:
-        text = f'Вы еще не начали викторину'
         context.bot.send_message(chat_id=chat_id,
-                                 text=text,
+                                 text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
         telegram_logger.debug(f'get_my_score for {chat_id} failed: no chat_id in redis')
 
 
 def waiting_for_new_question(update, context):
     chat_id = update.effective_chat.id
-    text = f'{TEXTS["next_question"]}'
+    text = utilities.waiting_for_new_question()
     context.bot.send_message(chat_id=chat_id,
                              text=text,
                              reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
     telegram_logger.debug(f'waiting_for_new_question for {chat_id} ')
     return ConversationHandler.END
-
-# def send_new_question(update, context):
-#     new_question(update, context)
-
-# def answer(update, context):
-#     which_button_was_pressed(update, context)
-    # if answer:
-    #     # context.bot.send_message(chat_id=update.effective_chat.id, text=answer)
-    #     send_start_keyboard(update, context)
-
-
-# def which_button_was_pressed(update, context):
-#     buttons = TEXTS_BUTTONS['keyboard'].values()
-#     chat_id = update.effective_chat.id
-#     if update.message.text in buttons:
-#         if update.message.text == TEXTS_BUTTONS['keyboard']['new_question']:
-#             all_questions = list(quiz_questions.keys())
-#             random_question_number = random.choice(all_questions)
-#             random_question = quiz_questions[random_question_number]['question']
-#             r_db.set(chat_id, random_question_number)
-#             true_answer = quiz_questions[random_question_number]['answer']
-#             print(true_answer)
-#             context.bot.send_message(chat_id=chat_id, text=random_question)
-#     else:
-#         print(r_db.get(chat_id))
-#         if r_db.get(chat_id) is not 'null':
-#             current_question = r_db.get(chat_id)
-#             true_answer = quiz_questions[current_question]['answer'].lower()
-#             user_text = update.message.text.lower()
-#             if true_answer == user_text or true_answer.find(user_text) != -1:
-#                 answer_to_user = f"{TEXTS['true_answer']} {TEXTS['next_question']}"
-#             else:
-#                 answer_to_user = f"{TEXTS['false_answer']} {TEXTS['try_again']}"
-#             context.bot.send_message(chat_id=chat_id, text=answer_to_user)
-#         else:
-#             send_start_keyboard(update, context)
 
 
 if __name__ == '__main__':

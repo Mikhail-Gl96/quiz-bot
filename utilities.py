@@ -1,9 +1,6 @@
 import random
 
 import telegram
-from telegram.ext import Updater
-from telegram.ext import CommandHandler, ConversationHandler, RegexHandler
-from telegram.ext import MessageHandler, Filters
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 from texts import TEXTS_BUTTONS as TEXTS_BUTTONS
@@ -40,5 +37,60 @@ def new_question(chat_id, r_db, quiz_questions):
     print(true_answer)
 
     return random_question
+
+
+def end_quiz(chat_id, r_db, quiz_questions):
+    current_question_id = r_db.get(chat_id)
+    if current_question_id:
+        current_question = quiz_questions[current_question_id]['question']
+        current_question_true_answer = quiz_questions[current_question_id]['answer']
+        text = f'Текущий вопрос: {current_question}\n\nОтвет: {current_question_true_answer}'
+        r_db.delete(chat_id)
+        return {'status': True, 'data': text}
+    else:
+        text = f'Вы еще не начали викторину'
+        return {'status': False, 'data': text}
+
+
+def get_my_score(chat_id, r_db):
+    current_question_id = r_db.get(chat_id)
+    if current_question_id:
+        text = f'Вы в викторине, рейтинг сделаем позже'
+        return {'status': True, 'data': text}
+    else:
+        text = f'Вы еще не начали викторину'
+        return {'status': False, 'data': text}
+
+
+def get_user_last_question(chat_id, r_db, quiz_questions):
+    current_question_id = r_db.get(chat_id)
+    if current_question_id:
+        question_id_number = current_question_id.lower().replace("вопрос ", "")
+        current_question = quiz_questions[current_question_id]['question']
+        text = f'Ваш последний вопрос без ответа: {question_id_number}. Вопрос был такой: {current_question}'
+        return {'status': True, 'data': text, 'question_id': question_id_number, 'current_question': current_question}
+    else:
+        return {'status': False, 'data': None}
+
+
+def waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions):
+    current_question_id = r_db.get(chat_id)
+    if current_question_id:
+        true_answer = quiz_questions[current_question_id]['answer'].lower()
+        user_text = user_message.lower()
+        case_is_true = true_answer == user_text or true_answer.find(user_text) != -1
+        if case_is_true:
+            answer_to_user = f"{TEXTS['true_answer']} {TEXTS['next_question']}"
+        else:
+            answer_to_user = f"{TEXTS['false_answer']} {TEXTS['try_again']}"
+        return {'status': True, 'true_answer': case_is_true, 'data': answer_to_user, 'answer': true_answer}
+    else:
+        text = f'Вы еще не начали викторину'
+        return {'status': False, 'data': text}
+
+
+def waiting_for_new_question():
+    text = f'{TEXTS["next_question"]}'
+    return text
 
 
