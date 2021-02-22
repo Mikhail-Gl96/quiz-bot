@@ -78,7 +78,8 @@ def waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions):
     if current_question_id:
         true_answer = quiz_questions[current_question_id]['answer'].lower()
         user_text = user_message.lower()
-        case_is_true = true_answer == user_text or true_answer.find(user_text) != -1
+        # case_is_true = true_answer == user_text or true_answer.find(user_text) != -1
+        case_is_true = _is_answer_correct(user_text, true_answer)
         if case_is_true:
             answer_to_user = f"{TEXTS['true_answer']} {TEXTS['next_question']}"
         else:
@@ -94,3 +95,19 @@ def waiting_for_new_question():
     return text
 
 
+def _is_answer_correct(user_text, true_answer):
+    user_text = user_text.replace('...', '').replace('"', '')
+    true_answer = true_answer.replace('...', '').replace('"', '')
+    case_answers_fully_similar = true_answer == user_text
+    case_partly_like_similar = sum([True for i in user_text.split(' ') if true_answer.find(i) != -1]) > len(true_answer.split(' '))/2
+    case_dot_splitted_list = sum([True for i in user_text.split('.') if true_answer.find(i) != -1]) > 0
+    case_dot_splitted = user_text.split('.') == true_answer.split('.')
+    # print(user_text.split(' '))
+    # print(true_answer.split(' '))
+    # print('- - - ')
+    # print(user_text.split('.'))
+    # print(true_answer.split('.'))
+    if case_dot_splitted:
+        return True
+    case_is_true = case_answers_fully_similar or case_partly_like_similar or case_dot_splitted_list
+    return case_is_true

@@ -81,6 +81,7 @@ def end_quiz(update, context):
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
         telegram_logger.debug(f'end_quiz for {chat_id} failed: no chat_id in redis')
+        return ConversationHandler.END
 
 
 def get_my_score(update, context):
@@ -110,16 +111,21 @@ def waiting_for_question_answer(update, context):
         context.bot.send_message(chat_id=chat_id,
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'get_my_score for {chat_id} failed: no chat_id in redis')
+        telegram_logger.debug(f'waiting_for_question_answer for {chat_id} failed: no chat_id in redis')
+        return ConversationHandler.END
 
 
 def waiting_for_new_question(update, context):
     chat_id = update.effective_chat.id
-    text = utilities.waiting_for_new_question()
-    context.bot.send_message(chat_id=chat_id,
-                             text=text,
-                             reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-    telegram_logger.debug(f'waiting_for_new_question for {chat_id} ')
+    user_message = update.message.text
+    if user_message == TEXTS_BUTTONS['keyboard']['new_question']:
+        return new_question(update, context)
+    else:
+        text = utilities.waiting_for_new_question()
+        context.bot.send_message(chat_id=chat_id,
+                                 text=text,
+                                 reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
+        telegram_logger.debug(f'waiting_for_new_question for {chat_id} ')
     return ConversationHandler.END
 
 
