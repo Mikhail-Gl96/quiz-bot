@@ -33,7 +33,6 @@ def new_question(chat_id, r_db, quiz_questions):
     questions = list(quiz_questions.keys())
     random_question_number = random.choice(questions)
     random_question = quiz_questions[random_question_number]['question']
-    print(quiz_questions[random_question_number]['answer'])
     user_data = json.dumps({
         'current_question_id': random_question_number,
         'is_answer_correct': False
