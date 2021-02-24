@@ -9,12 +9,12 @@ from telegram.ext import Updater
 
 import questions
 import utilities
-from MyLogger import TelegramLogsHandler, create_my_logger
+from MyLogger import TelegramLogsHandler, create_custom_logger
 from texts import TEXTS_BUTTONS as TEXTS_BUTTONS
 from texts import TEXTS as TEXTS
 
 
-telegram_logger = create_my_logger(name=__name__, level=logging.INFO)
+telegram_logger = create_custom_logger(name=__name__, level=logging.INFO)
 
 
 def main():

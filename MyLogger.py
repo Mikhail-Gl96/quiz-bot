@@ -27,7 +27,7 @@ class TelegramLogsHandler(logging.Handler):
         self.tg_bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
-def create_my_logger(name, level):
+def create_custom_logger(name, level):
     """Создаем и настраиваем кастомный логгер для каждого модуля"""
 
     custom_logger = logging.getLogger(name)

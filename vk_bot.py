@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 
 import utilities
 from texts import TEXTS_BUTTONS as TEXTS_BUTTONS
-from MyLogger import create_my_logger
+from MyLogger import create_custom_logger
 
 
-vk_logger = create_my_logger(name=__name__, level=logging.INFO)
+vk_logger = create_custom_logger(name=__name__, level=logging.INFO)
 
 
 def echo_answer(event, vk_api):
