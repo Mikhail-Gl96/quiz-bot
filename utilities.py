@@ -1,7 +1,7 @@
 import random
 
-from fuzzywuzzy import fuzz
 import telegram
+from fuzzywuzzy import fuzz
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 from texts import TEXTS_BUTTONS
@@ -94,7 +94,5 @@ def waiting_for_new_question():
 
 
 def _is_answer_correct(user_text, true_answer):
-    user_text = user_text.replace('...', '').replace('"', '')
-    true_answer = true_answer.replace('...', '').replace('"', '')
-    correct_ratio = fuzz.partial_ratio(true_answer, user_text)
+    correct_ratio = fuzz.token_sort_ratio(true_answer, user_text)
     return True if correct_ratio >= 75 else False

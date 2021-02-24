@@ -17,34 +17,6 @@ from texts import TEXTS
 telegram_logger = create_custom_logger(name=__name__, level=logging.INFO)
 
 
-def main():
-    bot = Updater(token=telegram_token, use_context=True)
-    telegram_logger.addHandler(TelegramLogsHandler(tg_bot=bot.bot, chat_id=telegram_chat_id))
-
-    dispatcher = bot.dispatcher
-
-    start_handler = CommandHandler('start', start)
-    new_question_handler = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['new_question']), new_question)
-    end_quiz_handler = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['end_quiz']), end_quiz)
-    my_score_handler = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['my_score']), get_my_score)
-    waiting_for_answer_handler = MessageHandler(Filters.text, waiting_for_question_answer)
-    waiting_for_new_question_handler = MessageHandler(Filters.text, waiting_for_new_question)
-
-    conversation_handler = ConversationHandler(entry_points=[new_question_handler],
-                                               states={
-                                                   'waiting_for_answer': [waiting_for_answer_handler],
-                                                   'waiting_for_new_question': [waiting_for_new_question_handler]
-                                               },
-                                               fallbacks=[])
-    dispatcher.add_handler(start_handler)
-    dispatcher.add_handler(end_quiz_handler)
-    dispatcher.add_handler(my_score_handler)
-    dispatcher.add_handler(conversation_handler)
-
-    bot.start_polling()
-    bot.idle()
-
-
 def start(update, context):
     chat_id = update.effective_chat.id
     send_start_keyboard(update, context)
@@ -144,5 +116,29 @@ if __name__ == '__main__':
 
     quiz_questions = questions.get_questions()
 
-    main()
+    bot = Updater(token=telegram_token, use_context=True)
+    telegram_logger.addHandler(TelegramLogsHandler(tg_bot=bot.bot, chat_id=telegram_chat_id))
+
+    dispatcher = bot.dispatcher
+
+    start_handler = CommandHandler('start', start)
+    new_question = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['new_question']), new_question_handler)
+    end_quiz = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['end_quiz']), end_quiz_handler)
+    user_score = MessageHandler(Filters.regex(TEXTS_BUTTONS['keyboard']['my_score']), user_score_handler)
+    question_answer = MessageHandler(Filters.text, question_answer_handler)
+    waiting_for_new_question = MessageHandler(Filters.text, waiting_for_new_question_handler)
+
+    conversation_handler = ConversationHandler(entry_points=[new_question],
+                                               states={
+                                                   'waiting_for_answer': [question_answer],
+                                                   'waiting_for_new_question': [waiting_for_new_question]
+                                               },
+                                               fallbacks=[])
+    dispatcher.add_handler(start_handler)
+    dispatcher.add_handler(end_quiz)
+    dispatcher.add_handler(user_score)
+    dispatcher.add_handler(conversation_handler)
+
+    bot.start_polling()
+    bot.idle()
 
