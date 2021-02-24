@@ -41,8 +41,6 @@ def new_question_handler(update, context):
 def end_quiz_handler(update, context):
     chat_id = update.effective_chat.id
     text = utilities.end_quiz(chat_id, r_db, quiz_questions)
-    # TODO: так как поле затирается и сразу создается новое - если пользователь правильно ответит на вопрос и
-    #  нажмет на сдаться - у него появится сообщение как будто он сдался. При доработке бота сделать джейсонку умнее*
     if text['status']:
         context.bot.send_message(chat_id=chat_id, text=text['data'])
         telegram_logger.debug(f'end_quiz_handler for {chat_id}')
@@ -52,7 +50,7 @@ def end_quiz_handler(update, context):
         context.bot.send_message(chat_id=chat_id,
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'end_quiz_handler for {chat_id} failed: no chat_id in redis')
+        telegram_logger.debug(f'end_quiz_handler for {chat_id}: {text["data"]}')
         return ConversationHandler.END
 
 

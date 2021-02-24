@@ -48,8 +48,6 @@ def new_question_handler(event, vk_api):
 def end_quiz_handler(event, vk_api):
     user_id = event.user_id
     text = utilities.end_quiz(user_id, r_db, quiz_questions)
-    # TODO: так как поле затирается и сразу создается новое - если пользователь правильно ответит на вопрос и
-    #  нажмет на сдаться - у него появится сообщение как будто он сдался. При доработке бота сделать джейсонку умнее*
     if text['status']:
         vk_send_msg(event, vk_api, text['data'])
         vk_logger.debug(f'end_quiz_handler for {user_id}')
@@ -57,7 +55,7 @@ def end_quiz_handler(event, vk_api):
         return new_question_handler(event, vk_api)
     else:
         vk_send_keyboard(event, vk_api, text['data'])
-        vk_logger.debug(f'end_quiz_handler for {user_id} failed: no chat_id in redis')
+        vk_logger.debug(f'end_quiz_handler for {user_id}: {text["data"]}')
 
 
 def user_score_handler(event, vk_api):
