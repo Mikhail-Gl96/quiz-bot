@@ -37,30 +37,30 @@ def vk_send_keyboard(event, vk_api, answer):
     vk_logger.debug(f'send to: {event.user_id} msg: {event.text}')
 
 
-def new_question(event, vk_api):
+def new_question_handler(event, vk_api):
     user_id = event.user_id
     random_question = utilities.new_question(chat_id=user_id, r_db=r_db, quiz_questions=quiz_questions)
     vk_send_keyboard(event, vk_api, random_question)
-    vk_logger.debug(f'new_question for {user_id}: question - {random_question} ')
+    vk_logger.debug(f'new_question_handler for {user_id}: question - {random_question} ')
     return 'waiting_for_answer'
 
 
-def end_quiz(event, vk_api):
+def end_quiz_handler(event, vk_api):
     user_id = event.user_id
     text = utilities.end_quiz(user_id, r_db, quiz_questions)
     # TODO: так как поле затирается и сразу создается новое - если пользователь правильно ответит на вопрос и
     #  нажмет на сдаться - у него появится сообщение как будто он сдался. При доработке бота сделать джейсонку умнее*
     if text['status']:
         vk_send_msg(event, vk_api, text['data'])
-        vk_logger.debug(f'end_quiz for {user_id}')
+        vk_logger.debug(f'end_quiz_handler for {user_id}')
         vk_logger.debug(f'delete chat_id_key in redis for {user_id}')
-        return new_question(event, vk_api)
+        return new_question_handler(event, vk_api)
     else:
         vk_send_keyboard(event, vk_api, text['data'])
-        vk_logger.debug(f'end_quiz for {user_id} failed: no chat_id in redis')
+        vk_logger.debug(f'end_quiz_handler for {user_id} failed: no chat_id in redis')
 
 
-def get_user_score(event, vk_api):
+def user_score_handler(event, vk_api):
     user_id = event.user_id
     text = utilities.get_user_score(user_id, r_db)
     if text['status']:
@@ -68,27 +68,27 @@ def get_user_score(event, vk_api):
         vk_logger.debug(f'end_quiz for {user_id} failed: no chat_id in redis')
     else:
         vk_send_keyboard(event, vk_api, text['data'])
-        vk_logger.debug(f'get_user_score for {user_id} failed: no chat_id in redis')
+        vk_logger.debug(f'user_score_handler for {user_id} failed: no chat_id in redis')
 
 
-def waiting_for_question_answer(event, vk_api):
+def question_answer_handler(event, vk_api):
     user_id = event.user_id
     user_message = event.text
     text = utilities.waiting_for_question_answer(user_id, user_message, r_db, quiz_questions)
     if text['status']:
         vk_send_msg(event, vk_api, text['data'])
         vk_logger.debug(f'waiting_for_question_answer for {user_id}: answer is {text["true_answer"]}')
-        return 'waiting_for_new_question' if text['true_answer'] else 'waiting_for_answer'
+        return 'question_answer_handler' if text['true_answer'] else 'waiting_for_answer'
     else:
         vk_send_msg(event, vk_api, text['data'])
-        vk_logger.debug(f'get_user_score for {user_id} failed: no chat_id in redis')
+        vk_logger.debug(f'question_answer_handler for {user_id} failed: no chat_id in redis')
 
 
-def waiting_for_new_question(event, vk_api):
+def waiting_for_new_question_handler(event, vk_api):
     user_id = event.user_id
     text = utilities.waiting_for_new_question()
     vk_send_msg(event, vk_api, text['data'])
-    vk_logger.debug(f'waiting_for_new_question for {user_id} ')
+    vk_logger.debug(f'waiting_for_new_question_handler for {user_id} ')
     return 'end'
 
 
@@ -100,13 +100,13 @@ def conversation_handler(event, vk_api):
     button_user_score = TEXTS_BUTTONS['keyboard']['my_score']
 
     if text_from_user == button_new_question:
-        new_question(event, vk_api)
+        new_question_handler(event, vk_api)
     elif text_from_user == button_end_quiz:
-        end_quiz(event, vk_api)
+        end_quiz_handler(event, vk_api)
     elif text_from_user == button_user_score:
-        get_user_score(event, vk_api)
+        user_score_handler(event, vk_api)
     else:
-        waiting_for_question_answer(event, vk_api)
+        question_answer_handler(event, vk_api)
 
 
 if __name__ == '__main__':

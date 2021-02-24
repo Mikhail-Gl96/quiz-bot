@@ -58,46 +58,46 @@ def send_start_keyboard(update, context):
                              reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
 
 
-def new_question(update, context):
+def new_question_handler(update, context):
     chat_id = update.effective_chat.id
     random_question = utilities.new_question(chat_id=chat_id, r_db=r_db, quiz_questions=quiz_questions)
     context.bot.send_message(chat_id=chat_id, text=random_question)
-    telegram_logger.debug(f'new_question for {chat_id}: question - {random_question} ')
+    telegram_logger.debug(f'new_question_handler for {chat_id}: question - {random_question} ')
     return 'waiting_for_answer'
 
 
-def end_quiz(update, context):
+def end_quiz_handler(update, context):
     chat_id = update.effective_chat.id
     text = utilities.end_quiz(chat_id, r_db, quiz_questions)
     # TODO: так как поле затирается и сразу создается новое - если пользователь правильно ответит на вопрос и
     #  нажмет на сдаться - у него появится сообщение как будто он сдался. При доработке бота сделать джейсонку умнее*
     if text['status']:
         context.bot.send_message(chat_id=chat_id, text=text['data'])
-        telegram_logger.debug(f'end_quiz for {chat_id}')
+        telegram_logger.debug(f'end_quiz_handler for {chat_id}')
         telegram_logger.debug(f'delete chat_id_key in redis for {chat_id}')
-        return new_question(update, context)
+        return new_question_handler(update, context)
     else:
         context.bot.send_message(chat_id=chat_id,
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'end_quiz for {chat_id} failed: no chat_id in redis')
+        telegram_logger.debug(f'end_quiz_handler for {chat_id} failed: no chat_id in redis')
         return ConversationHandler.END
 
 
-def get_user_score(update, context):
+def user_score_handler(update, context):
     chat_id = update.effective_chat.id
     text = utilities.get_user_score(chat_id, r_db)
     if text['status']:
         context.bot.send_message(chat_id=chat_id, text=text['data'])
-        telegram_logger.debug(f'end_quiz for {chat_id} failed: no chat_id in redis')
+        telegram_logger.debug(f'user_score_handler for {chat_id} failed: no chat_id in redis')
     else:
         context.bot.send_message(chat_id=chat_id,
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'get_user_score for {chat_id} failed: no chat_id in redis')
+        telegram_logger.debug(f'user_score_handler for {chat_id} failed: no chat_id in redis')
 
 
-def waiting_for_question_answer(update, context):
+def question_answer_handler(update, context):
     chat_id = update.effective_chat.id
     user_message = update.message.text
     text = utilities.waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions)
@@ -105,27 +105,27 @@ def waiting_for_question_answer(update, context):
         context.bot.send_message(chat_id=chat_id,
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'waiting_for_question_answer for {chat_id}: answer is {text["true_answer"]}')
+        telegram_logger.debug(f'question_answer_handler for {chat_id}: answer is {text["true_answer"]}')
         return 'waiting_for_new_question' if text['true_answer'] else 'waiting_for_answer'
     else:
         context.bot.send_message(chat_id=chat_id,
                                  text=text['data'],
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'waiting_for_question_answer for {chat_id} failed: no chat_id in redis')
+        telegram_logger.debug(f'question_answer_handler for {chat_id} failed: no chat_id in redis')
         return ConversationHandler.END
 
 
-def waiting_for_new_question(update, context):
+def waiting_for_new_question_handler(update, context):
     chat_id = update.effective_chat.id
     user_message = update.message.text
     if user_message == TEXTS_BUTTONS['keyboard']['new_question']:
-        return new_question(update, context)
+        return new_question_handler(update, context)
     else:
         text = utilities.waiting_for_new_question()
         context.bot.send_message(chat_id=chat_id,
                                  text=text,
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))
-        telegram_logger.debug(f'waiting_for_new_question for {chat_id} ')
+        telegram_logger.debug(f'waiting_for_new_question_handler for {chat_id} ')
     return ConversationHandler.END
 
 
