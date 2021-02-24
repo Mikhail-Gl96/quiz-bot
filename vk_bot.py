@@ -16,23 +16,6 @@ from MyLogger import create_custom_logger
 vk_logger = create_custom_logger(name=__name__, level=logging.INFO)
 
 
-def echo_answer(event, vk_api):
-    random_id = random.randint(1, 1000)
-    try:
-        answer = event.text
-        if answer:
-            vk_api.messages.send(
-                user_id=event.user_id,
-                message=answer,
-                random_id=random_id
-            )
-            vk_logger.debug(f'send to: {event.user_id} msg: {event.text}')
-        else:
-            vk_logger.debug(f'no intent detected')
-    except Exception as e:
-        vk_logger.error(f"error: {e}")
-
-
 def vk_send_msg(event, vk_api, msg):
     random_id = random.randint(1, 1000)
     vk_api.messages.send(
@@ -114,14 +97,14 @@ def conversation_handler(event, vk_api):
 
     button_new_question = TEXTS_BUTTONS['keyboard']['new_question']
     button_end_quiz = TEXTS_BUTTONS['keyboard']['end_quiz']
-    button_my_score = TEXTS_BUTTONS['keyboard']['my_score']
+    button_user_score = TEXTS_BUTTONS['keyboard']['my_score']
 
     if text_from_user == button_new_question:
         new_question(event, vk_api)
     elif text_from_user == button_end_quiz:
         end_quiz(event, vk_api)
-    elif text_from_user == button_my_score:
-        get_my_score(event, vk_api)
+    elif text_from_user == button_user_score:
+        get_user_score(event, vk_api)
     else:
         waiting_for_question_answer(event, vk_api)
 
