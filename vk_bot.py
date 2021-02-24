@@ -77,15 +77,15 @@ def end_quiz(event, vk_api):
         vk_logger.debug(f'end_quiz for {user_id} failed: no chat_id in redis')
 
 
-def get_my_score(event, vk_api):
+def get_user_score(event, vk_api):
     user_id = event.user_id
-    text = utilities.get_my_score(user_id, r_db)
+    text = utilities.get_user_score(user_id, r_db)
     if text['status']:
         vk_send_msg(event, vk_api, text['data'])
         vk_logger.debug(f'end_quiz for {user_id} failed: no chat_id in redis')
     else:
         vk_send_keyboard(event, vk_api, text['data'])
-        vk_logger.debug(f'get_my_score for {user_id} failed: no chat_id in redis')
+        vk_logger.debug(f'get_user_score for {user_id} failed: no chat_id in redis')
 
 
 def waiting_for_question_answer(event, vk_api):
@@ -98,7 +98,7 @@ def waiting_for_question_answer(event, vk_api):
         return 'waiting_for_new_question' if text['true_answer'] else 'waiting_for_answer'
     else:
         vk_send_msg(event, vk_api, text['data'])
-        vk_logger.debug(f'get_my_score for {user_id} failed: no chat_id in redis')
+        vk_logger.debug(f'get_user_score for {user_id} failed: no chat_id in redis')
 
 
 def waiting_for_new_question(event, vk_api):

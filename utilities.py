@@ -1,5 +1,6 @@
 import random
 
+from fuzzywuzzy import fuzz
 import telegram
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
@@ -21,21 +22,17 @@ def get_start_keyboard(messenger_type):
         keyboard = VkKeyboard()
         keyboard.add_button(button_new_question, color=VkKeyboardColor.POSITIVE)
         keyboard.add_button(button_end_quiz, color=VkKeyboardColor.NEGATIVE)
-        keyboard.add_line()  # Переход на вторую строку
+        keyboard.add_line()
         keyboard.add_button(button_my_score, color=VkKeyboardColor.SECONDARY)
         reply_markup = keyboard.get_keyboard()
     return reply_markup
 
 
 def new_question(chat_id, r_db, quiz_questions):
-    all_questions = list(quiz_questions.keys())
-    random_question_number = random.choice(all_questions)
+    questions = list(quiz_questions.keys())
+    random_question_number = random.choice(questions)
     random_question = quiz_questions[random_question_number]['question']
     r_db.set(chat_id, random_question_number)
-
-    true_answer = quiz_questions[random_question_number]['answer']
-    print(true_answer)
-
     return random_question
 
 
@@ -52,7 +49,7 @@ def end_quiz(chat_id, r_db, quiz_questions):
         return {'status': False, 'data': text}
 
 
-def get_my_score(chat_id, r_db):
+def get_user_score(chat_id, r_db):
     current_question_id = r_db.get(chat_id)
     if current_question_id:
         text = TEXTS['rating_exists']
@@ -78,7 +75,6 @@ def waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions):
     if current_question_id:
         true_answer = quiz_questions[current_question_id]['answer'].lower()
         user_text = user_message.lower()
-        # case_is_true = true_answer == user_text or true_answer.find(user_text) != -1
         case_is_true = _is_answer_correct(user_text, true_answer)
         if case_is_true:
             answer_to_user = f"{TEXTS['true_answer']} {TEXTS['next_question']}"
@@ -91,6 +87,8 @@ def waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions):
 
 
 def waiting_for_new_question():
+    # q: Не очень понял смысла этой фукнции.
+    # a: Если пользователь ответил на вопрос и что-то написал боту, но не нажал кнопку след вопрос - выводится сообщение
     text = f'{TEXTS["next_question"]}'
     return text
 
@@ -98,11 +96,5 @@ def waiting_for_new_question():
 def _is_answer_correct(user_text, true_answer):
     user_text = user_text.replace('...', '').replace('"', '')
     true_answer = true_answer.replace('...', '').replace('"', '')
-    case_answers_fully_similar = true_answer == user_text
-    case_partly_like_similar = sum([True for i in user_text.split(' ') if true_answer.find(i) != -1]) > len(true_answer.split(' '))/2
-    case_dot_splitted_list = sum([True for i in user_text.split('.') if true_answer.find(i) != -1]) > 0
-    case_dot_splitted = user_text.split('.') == true_answer.split('.')
-    if case_dot_splitted:
-        return True
-    case_is_true = case_answers_fully_similar or case_partly_like_similar or case_dot_splitted_list
-    return case_is_true
+    correct_ratio = fuzz.partial_ratio(true_answer, user_text)
+    return True if correct_ratio >= 75 else False
