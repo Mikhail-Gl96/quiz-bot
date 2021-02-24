@@ -3,8 +3,8 @@ import random
 import telegram
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
-from texts import TEXTS_BUTTONS as TEXTS_BUTTONS
-from texts import TEXTS as TEXTS
+from texts import TEXTS_BUTTONS
+from texts import TEXTS
 
 
 def get_start_keyboard(messenger_type):
@@ -102,11 +102,6 @@ def _is_answer_correct(user_text, true_answer):
     case_partly_like_similar = sum([True for i in user_text.split(' ') if true_answer.find(i) != -1]) > len(true_answer.split(' '))/2
     case_dot_splitted_list = sum([True for i in user_text.split('.') if true_answer.find(i) != -1]) > 0
     case_dot_splitted = user_text.split('.') == true_answer.split('.')
-    # print(user_text.split(' '))
-    # print(true_answer.split(' '))
-    # print('- - - ')
-    # print(user_text.split('.'))
-    # print(true_answer.split('.'))
     if case_dot_splitted:
         return True
     case_is_true = case_answers_fully_similar or case_partly_like_similar or case_dot_splitted_list

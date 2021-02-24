@@ -3,15 +3,15 @@ import os
 
 import redis
 from dotenv import load_dotenv
-from telegram.ext import CommandHandler, ConversationHandler, RegexHandler
+from telegram.ext import CommandHandler, ConversationHandler
 from telegram.ext import MessageHandler, Filters
 from telegram.ext import Updater
 
 import questions
 import utilities
 from MyLogger import TelegramLogsHandler, create_custom_logger
-from texts import TEXTS_BUTTONS as TEXTS_BUTTONS
-from texts import TEXTS as TEXTS
+from texts import TEXTS_BUTTONS
+from texts import TEXTS
 
 
 telegram_logger = create_custom_logger(name=__name__, level=logging.INFO)

@@ -9,7 +9,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from dotenv import load_dotenv
 
 import utilities
-from texts import TEXTS_BUTTONS as TEXTS_BUTTONS
+from texts import TEXTS_BUTTONS
 from MyLogger import create_custom_logger
 
 
@@ -111,7 +111,6 @@ def waiting_for_new_question(event, vk_api):
 
 def conversation_handler(event, vk_api):
     text_from_user = event.text
-    user_id = event.user_id
 
     button_new_question = TEXTS_BUTTONS['keyboard']['new_question']
     button_end_quiz = TEXTS_BUTTONS['keyboard']['end_quiz']
