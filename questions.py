@@ -9,34 +9,22 @@ def get_questions():
     quiz_questions = {}
 
     with open(random_file, 'r', encoding='KOI8-R') as file:
-        question_now = False
-        answer_now = False
+        question_now = None
+        temp_text = ''
         for string in file:
-            string = string.replace('\n', '')
-            if string == '':
-                if answer_now and answer_now:
-                    question_now = False
-                    answer_now = False
+            temp_text += string
+            if temp_text.endswith('\n\n') and question_now and quiz_questions.get(question_now):
+                quiz_questions[question_now].update({'answer': temp_text.replace('\n', '')})
+                temp_text = ''
+                question_now = None
             if string.startswith('Вопрос '):
-                answer_now = False
-                question_now = string.replace(':', '')
+                question_now = string.replace('\n', '').replace(':', '')
+                temp_text = ''
+            if string.startswith('Ответ:'):
                 quiz_questions.update({
-                    question_now: {'question': None,
-                                   'answer': None}
+                    question_now: {
+                        'question': temp_text.replace(string, '').replace('\n', '')}
                 })
-                continue
-            elif string.startswith('Ответ:'):
-                answer_now = True
-                continue
-            if answer_now:
-                quiz_questions[question_now].update({
-                    'answer': quiz_questions[question_now].get('answer') + ' ' + string
-                    if quiz_questions[question_now].get('answer') else string
-                })
-            elif question_now:
-                quiz_questions[question_now].update({
-                    'question': quiz_questions[question_now].get('question') + ' ' + string
-                    if quiz_questions[question_now].get('question') else string
-                })
+                temp_text = ''
     return quiz_questions.copy()
 
