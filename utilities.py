@@ -99,13 +99,6 @@ def waiting_for_question_answer(chat_id, user_message, r_db, quiz_questions):
         return {'status': False, 'data': text}
 
 
-def waiting_for_new_question():
-    # q: Не очень понял смысла этой фукнции.
-    # a: Если пользователь ответил на вопрос и что-то написал боту, но не нажал кнопку след вопрос - выводится сообщение
-    text = f'{TEXTS["next_question"]}'
-    return text
-
-
 def _is_answer_correct(user_text, true_answer):
     correct_ratio = fuzz.token_sort_ratio(true_answer, user_text)
     return True if correct_ratio >= 75 else False

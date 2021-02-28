@@ -91,7 +91,7 @@ def waiting_for_new_question_handler(update, context):
     if user_message == TEXTS_BUTTONS['keyboard']['new_question']:
         return new_question_handler(update, context)
     else:
-        text = utilities.waiting_for_new_question()
+        text = TEXTS["next_question"]
         context.bot.send_message(chat_id=chat_id,
                                  text=text,
                                  reply_markup=utilities.get_start_keyboard(messenger_type='telegram'))

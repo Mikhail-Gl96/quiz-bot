@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 import utilities
 from texts import TEXTS_BUTTONS
+from texts import TEXTS
 from MyLogger import create_custom_logger
 
 
@@ -84,7 +85,7 @@ def question_answer_handler(event, vk_api):
 
 def waiting_for_new_question_handler(event, vk_api):
     user_id = event.user_id
-    text = utilities.waiting_for_new_question()
+    text = TEXTS["next_question"]
     vk_send_msg(event, vk_api, text['data'])
     vk_logger.debug(f'waiting_for_new_question_handler for {user_id} ')
     return 'end'
